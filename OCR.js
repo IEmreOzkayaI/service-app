@@ -1,6 +1,6 @@
-//file name: helperFunctions.js
+//file name: OCR.js
 
-const API_KEY = 'AIzaSyAkJvlYlS37iUFmVnnIOQc5e3OO-nyg88w'; //put your key here.
+const API_KEY = 'key'; //put your key here.
 
 //this endpoint will tell Google to use the Vision API. Also, we are passing in our key.
 

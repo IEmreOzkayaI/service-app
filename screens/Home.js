@@ -3,41 +3,15 @@ import {View, Text, Button, StyleSheet, ScrollView, Image, Dimensions, Touchable
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import BackgroundImage from "../assets/arcelik_intro.png";
 import * as ImagePicker from "expo-image-picker";
-import callGoogleVisionAsync from "../helperFunctions";
+import callGoogleVisionAsync from "../OCR";
 import LoadingScreen from "./Loading";
+import db from "../db_config";
+import checkErrorCodeInText from "../predefined_errors";
 
 function Home({navigation}) {
-    const [image, setImage] = React.useState("");
-    const [text, setText] = React.useState("");
     const [isLoading, setIsLoading] = React.useState(false);
-
-    // const pickImage = async () => {
-    //     // const {granted} = await Permissions.askAsync(Permissions.MEDIA_LIBRARY)
-    //     const granted = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    //     if (granted) {
-    //         console.log('access granted')
-    //         let data = await ImagePicker.launchImageLibraryAsync({
-    //             mediaTypes: ImagePicker.MediaTypeOptions.All,
-    //             base64: true,
-    //         })
-    //         console.log(data)
-    //
-    //         if (!data.cancelled) {
-    //             console.log('data uri', data.assets[0])
-    //             const responseData = await callGoogleVisionAsync(data.assets[0].base64);
-    //             const text = responseData.text;
-    //             const image = data.assets[0].uri;
-    //             setText(text);
-    //             setImage(image);
-    //             if (responseData) {
-    //                 navigation.navigate('Directions' , {image:image, text:text})
-    //             }
-    //         }
-    //
-    //     } else {
-    //         Alert.alert('Permissions required to access camera roll.')
-    //     }
-    // }
+    const [image, setImage] = React.useState(null);
+    const [text, setText] = React.useState(null);
 
     const openCamera = async () => {
         const granted = await ImagePicker.requestCameraPermissionsAsync();
@@ -47,34 +21,66 @@ function Home({navigation}) {
                 mediaTypes: ImagePicker.MediaTypeOptions.All,
                 base64: true,
             });
-            console.log(data)
-            if(data.canceled){
+            if (data.canceled) {
                 console.log("cancelled")
                 setIsLoading(false)
             }
             if (!data.canceled) {
-                console.log('data uri', data.assets[0])
                 const responseData = await callGoogleVisionAsync(data.assets[0].base64);
                 const text = responseData.text;
                 const image = data.assets[0].uri;
-                setText(text);
-                setImage(image);
-                if (responseData){
-                    navigation.navigate('Directions' , {image:image, text:text})
+                console.log("text", text)
+                const response = checkErrorCodeInText(text);
+                if (response) {
+                    setText(response);
+                    setImage(image);
+                }else{
                     setIsLoading(false)
+                    Alert.alert(`Hata Kodu ${text} Bulunamadı`)
                 }
+
             }
         } else {
             Alert.alert('Permissions required to access camera roll.')
         }
     };
 
+    useEffect(() => {
+        if (isLoading && image && text) {
+            console.log("image", image)
+            console.log("text", text)
+            const getData =  async () => {
 
+                let data = await getErrorByName(text)
+                console.log("data", JSON.stringify(data[0], null, 2))
+                navigation.navigate('Directions', {image: image, data: data[0]})
+                setIsLoading(false)
+            }
+            getData().then(r => console.log("r",r));
+        }
+    }, [image,text]); // Ensure 'image' is the only dependency
+
+    const getErrorByName = (code) => {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql(
+                    'SELECT * FROM errors WHERE error_code = ?', [code],
+                    (_, {rows}) => {
+                        const data = rows._array;
+                        resolve(data); // Veriyi resolve ediyoruz
+                    },
+                    (_, error) => {
+                        reject(error); // Hata durumunda reject ediyoruz
+                    }
+                );
+            });
+        });
+    }
     // useEffect(() => {
     //     recognizeText();
     // }, [image]); // Ensure 'image' is the only dependency
     if (isLoading) {
-        return <LoadingScreen />;
+        return <LoadingScreen/>;
     }
 
     return (
@@ -93,11 +99,6 @@ function Home({navigation}) {
                     </View>
                 </TouchableOpacity>
                 <Image source={BackgroundImage} style={styles.home__page__image__index}/>
-                {/*<Button title="Pick an image from camera roll" onPress={pickImage}/>*/}
-                {/*<Button title="Open Camera" onPress={openCamera}/>*/}
-                {/*<Button onPress={recognizeText} title="Recognize Text"/>*/}
-                {/*<Image source={{uri: image}} style={{width: 200, height: 200, backgroundColor: 'black'}}/>*/}
-                {/*<Text>{text}</Text>*/}
             </View>
 
         </ScrollView>

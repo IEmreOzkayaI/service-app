@@ -4,10 +4,10 @@
     "slug": "service-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/arcelik_intro.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/arcelik_intro.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -25,6 +25,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fdf2b384-a0a3-4d8c-ade1-89202ecd14c5"
+      }
+    },
+    "owner": "emre.ozkaya"
   }
 }
